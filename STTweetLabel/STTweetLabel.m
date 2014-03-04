@@ -30,6 +30,8 @@
 @property (nonatomic, strong) NSDictionary *attributesLink;
 
 @property (nonatomic, strong) NSDictionary *highlightedAttributesLink;
+@property (nonatomic, strong) NSDictionary *highlightedAttributesHandle;
+@property (nonatomic, strong) NSDictionary *highlightedAttributesHashtag;
 @property (nonatomic, assign) id highlightedWord;
 
 @property (strong) UITextView *textView;
@@ -81,6 +83,9 @@
     _attributesHandle = @{NSForegroundColorAttributeName: [UIColor redColor], NSFontAttributeName: [UIFont fontWithName:@"HelveticaNeue" size:14.0]};
     _attributesHashtag = @{NSForegroundColorAttributeName: [[UIColor alloc] initWithWhite:170.0/255.0 alpha:1.0], NSFontAttributeName: [UIFont fontWithName:@"HelveticaNeue" size:14.0]};
     _attributesLink = @{NSForegroundColorAttributeName: [[UIColor alloc] initWithRed:129.0/255.0 green:171.0/255.0 blue:193.0/255.0 alpha:1.0], NSFontAttributeName: [UIFont fontWithName:@"HelveticaNeue" size:14.0]};
+    _highlightedAttributesHandle = @{};
+    _highlightedAttributesHashtag = @{};
+    _highlightedAttributesLink = @{};
     
     self.validProtocols = @[@"http", @"https"];
 }
@@ -300,15 +305,13 @@
     
     switch (hotWord)  {
         case STTweetHandle:
-//            _attributesHandle = attributes;
+            _highlightedAttributesHandle = attributes;
             break;
         case STTweetHashtag:
-//            _attributesHashtag = attributes;
+            _highlightedAttributesHashtag = attributes;
             break;
         case STTweetLink:
             _highlightedAttributesLink = attributes;
-            break;
-        default:
             break;
     }
 }
@@ -368,6 +371,20 @@
     }
 }
 
+- (NSDictionary *)highlightedAttributesForHotWord:(STTweetHotWord)hotWord {
+    switch (hotWord) {
+        case STTweetHandle:
+            return _highlightedAttributesHandle;
+            break;
+        case STTweetHashtag:
+            return _highlightedAttributesHashtag;
+            break;
+        case STTweetLink:
+            return _highlightedAttributesLink;
+            break;
+    }
+}
+
 - (BOOL)isLeftToRight {
     return _leftToRight;
 }
@@ -378,10 +395,21 @@
 - (void)clearHighlightedWord {
     if (_highlightedWord) {
         NSRange range = [[_highlightedWord objectForKey:@"range"] rangeValue];
+        [_textStorage removeAttributes:[self highlightedAttributesForHotWord:(STTweetHotWord)[[_highlightedWord objectForKey:@"hotWord"] integerValue]]
+                                 range:range];
+        [_textStorage addAttributes:[self  attributesForHotWord:(STTweetHotWord)[[_highlightedWord objectForKey:@"hotWord"] integerValue]]
+                              range:range];
         self.highlightedWord = nil;
-        [_textStorage removeAttributes:_highlightedAttributesLink range:range];
-        [_textStorage addAttributes:_attributesLink range:range];
-        self.highlightedWord = nil;
+    }
+}
+
+- (void)highlightWord {
+    if (_highlightedWord) {
+        NSRange range = [[_highlightedWord objectForKey:@"range"] rangeValue];
+        [_textStorage removeAttributes:[self attributesForHotWord:(STTweetHotWord)[[_highlightedWord objectForKey:@"hotWord"] integerValue]]
+                                 range:range];
+        [_textStorage addAttributes:[self  highlightedAttributesForHotWord:(STTweetHotWord)[[_highlightedWord objectForKey:@"hotWord"] integerValue]]
+                              range:range];
     }
 }
 
@@ -394,10 +422,7 @@
         NSRange range = [[obj objectForKey:@"range"] rangeValue];
         if (NSLocationInRange(charIndex, range)) {
             blockSelf.highlightedWord = obj;
-            [blockSelf.textStorage removeAttributes:_attributesLink
-                                              range:range];
-            [blockSelf.textStorage addAttributes:_highlightedAttributesLink
-                                           range:range];
+            [self highlightWord];
             *stop = YES;
         }
     }];
