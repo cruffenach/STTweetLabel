@@ -14,5 +14,6 @@
 
 - (void)addAttributes:(NSDictionary *)attrs range:(NSRange)range;
 - (void)removeAttribute:(NSString *)name range:(NSRange)range;
+- (void)removeAttributes:(NSDictionary*)attributes range:(NSRange)range;
 
 @end

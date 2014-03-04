@@ -31,6 +31,8 @@
     tweetLabel.textAlignment = NSTextAlignmentLeft;
     [self.view addSubview:tweetLabel];
     
+    [tweetLabel setHighlightedAttributes:@{NSForegroundColorAttributeName : [UIColor redColor]} hotWord:STTweetLink];    
+    
     CGSize size = [tweetLabel suggestedFrameSizeToFitEntireStringConstraintedToWidth:tweetLabel.frame.size.width];
     CGRect frame = tweetLabel.frame;
     frame.size.height = size.height;

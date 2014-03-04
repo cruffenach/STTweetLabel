@@ -55,6 +55,13 @@
     [self endEditing];
 }
 
+- (void)removeAttributes:(NSDictionary*)attributes range:(NSRange)range {
+    __block typeof(self) blockSelf = self;
+    [attributes enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        [blockSelf removeAttribute:key range:range];
+    }];
+}
+
 - (void)replaceCharactersInRange:(NSRange)range withString:(NSString *)string {
     [self beginEditing];
     [_backingStore replaceCharactersInRange:range withString:string];
