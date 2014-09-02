@@ -71,11 +71,11 @@
 #pragma mark Setup
 
 - (void)setupLabel {
-	// Set the basic properties
-	[self setBackgroundColor:[UIColor clearColor]];
-	[self setClipsToBounds:NO];
-	[self setUserInteractionEnabled:YES];
-	[self setNumberOfLines:0];
+    // Set the basic properties
+    [self setBackgroundColor:[UIColor clearColor]];
+    [self setClipsToBounds:NO];
+    [self setUserInteractionEnabled:YES];
+    [self setNumberOfLines:0];
     
     _leftToRight = YES;
     
@@ -88,6 +88,15 @@
     _highlightedAttributesLink = @{};
     
     self.validProtocols = @[@"http", @"https"];
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    __weak typeof(self) blockSelf = self;
+    //Really hate this but without it there are times on iOS 8 the textview isn't visible.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.01 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [blockSelf bringSubviewToFront:blockSelf.textView];
+    });
 }
 
 #pragma mark -
@@ -125,7 +134,7 @@
         NSRange range = [tmpText rangeOfCharacterFromSet:hotCharactersSet];
         
         STTweetHotWord hotWord;
-
+        
         switch ([tmpText characterAtIndex:range.location]) {
             case '@':
                 hotWord = STTweetHandle;
@@ -136,12 +145,12 @@
             default:
                 break;
         }
-
+        
         [tmpText replaceCharactersInRange:range withString:@"%"];
         // If the hot character is not preceded by a alphanumeric characater, ie email (sebastien@world.com)
         if (range.location > 0 && [tmpText characterAtIndex:range.location - 1] != ' ' && [tmpText characterAtIndex:range.location - 1] != '\n')
             continue;
-
+        
         // Determine the length of the hot word
         int length = (int)range.length;
         
@@ -165,10 +174,10 @@
 
 - (void)determineLinks {
     NSMutableString *tmpText = [[NSMutableString alloc] initWithString:_cleanText];
-
+    
     NSError *regexError = nil;
     NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:STURLRegex options:0 error:&regexError];
-
+    
     [regex enumerateMatchesInString:tmpText options:0 range:NSMakeRange(0, tmpText.length) usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
         NSString *protocol = @"http";
         NSString *link = [tmpText substringWithRange:result.range];
@@ -176,7 +185,7 @@
         if (protocolRange.location != NSNotFound) {
             protocol = [link substringToIndex:protocolRange.location];
         }
-
+        
         if ([_validProtocols containsObject:protocol.lowercaseString]) {
             [_rangesOfHotWords addObject:@{@"hotWord": @(STTweetLink), @"protocol": protocol, @"range": [NSValue valueWithRange:result.range]}];
         }
@@ -199,7 +208,7 @@
     _textContainer = [[NSTextContainer alloc] initWithSize:CGSizeMake(self.frame.size.width, CGFLOAT_MAX)];
     [_layoutManager addTextContainer:_textContainer];
     [_textStorage addLayoutManager:_layoutManager];
-
+    
     if (_textView != nil)
         [_textView removeFromSuperview];
     
@@ -211,6 +220,7 @@
     _textView.textContainerInset = UIEdgeInsetsZero;
     _textView.userInteractionEnabled = NO;
     [self addSubview:_textView];
+    [self layoutSubviews];
 }
 
 #pragma mark -
@@ -219,7 +229,7 @@
 - (CGSize)suggestedFrameSizeToFitEntireStringConstraintedToWidth:(CGFloat)width {
     if (_cleanText == nil)
         return CGSizeZero;
-
+    
     return [_textStorage.attributedString boundingRectWithSize:CGSizeMake(width, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
 }
 
@@ -256,7 +266,7 @@
         copy[NSForegroundColorAttributeName] = self.textColor;
         attributes = [NSDictionary dictionaryWithDictionary:copy];
     }
-
+    
     _attributesText = attributes;
     
     [self determineHotWords];
@@ -318,7 +328,7 @@
 
 - (void)setLeftToRight:(BOOL)leftToRight {
     _leftToRight = leftToRight;
-
+    
     [self determineHotWords];
 }
 
@@ -443,7 +453,7 @@
     [super touchesEnded:touches withEvent:event];
     CGPoint touchLocation = [[touches anyObject] locationInView:self];
     if (!CGRectContainsPoint(_textView.frame, touchLocation)) return;
-
+    
     int charIndex = (int)[self charIndexAtLocation:[[touches anyObject] locationInView:_textView]];
     
     [_rangesOfHotWords enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
@@ -453,7 +463,7 @@
             _detectionBlock((STTweetHotWord)[[obj objectForKey:@"hotWord"] intValue],
                             [_cleanText substringWithRange:range],
                             [obj objectForKey:@"protocol"],
-                            range);            
+                            range);
             *stop = YES;
         }
     }];
